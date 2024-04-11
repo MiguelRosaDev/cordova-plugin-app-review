@@ -22,8 +22,8 @@ public class AppReviewPlugin extends ReflectiveCordovaPlugin {
     private void requestReview(CallbackContext callbackContext) throws Exception {
         Activity activity = cordova.getActivity();
         ReviewManager manager = ReviewManagerFactory.create(activity);
-        ReviewInfo reviewInfo = manager.requestReviewFlow();
-        manager.launchReviewFlow(activity, reviewInfo);
+        ReviewInfo reviewInfo = await(manager.requestReviewFlow());
+        await(manager.launchReviewFlow(activity, reviewInfo));
         callbackContext.success();
     }
 
