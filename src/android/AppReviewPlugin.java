@@ -18,13 +18,18 @@ import by.chemerisuk.cordova.support.CordovaMethod;
 import by.chemerisuk.cordova.support.ReflectiveCordovaPlugin;
 
 public class AppReviewPlugin extends ReflectiveCordovaPlugin {
-    @CordovaMethod()
+    @CordovaMethod(ExecutionThread.WORKER)
     private void requestReview(CallbackContext callbackContext) throws Exception {
-        Activity activity = cordova.getActivity();
-        ReviewManager manager = ReviewManagerFactory.create(activity);
-        ReviewInfo reviewInfo = await(manager.requestReviewFlow());
-        await(manager.launchReviewFlow(activity, reviewInfo));
-        callbackContext.success();
+        new Thread(){
+                @Override
+                public void run() {
+                    Activity activity = cordova.getActivity();
+                    ReviewManager manager = ReviewManagerFactory.create(activity);
+                    ReviewInfo reviewInfo = manager.requestReviewFlow();
+                    manager.launchReviewFlow(activity, reviewInfo);
+                    callbackContext.success();
+                }
+            }.start();
     }
 
     @CordovaMethod
