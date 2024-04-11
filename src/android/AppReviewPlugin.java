@@ -18,7 +18,7 @@ import by.chemerisuk.cordova.support.CordovaMethod;
 import by.chemerisuk.cordova.support.ReflectiveCordovaPlugin;
 
 public class AppReviewPlugin extends ReflectiveCordovaPlugin {
-    @CordovaMethod
+    @CordovaMethod(ExecutionThread.UI)
     private void requestReview(CallbackContext callbackContext) throws Exception {
         Activity activity = cordova.getActivity();
         ReviewManager manager = ReviewManagerFactory.create(activity);
