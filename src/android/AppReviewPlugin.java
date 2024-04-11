@@ -20,7 +20,7 @@ import by.chemerisuk.cordova.support.ReflectiveCordovaPlugin;
 
 public class AppReviewPlugin extends ReflectiveCordovaPlugin {
     //@CordovaMethod(WORKER)
-    @CordovaMethod()
+    @CordovaMethod
     private void requestReview(CallbackContext callbackContext) throws Exception {
         Activity activity = cordova.getActivity();
         ReviewManager manager = ReviewManagerFactory.create(activity);
