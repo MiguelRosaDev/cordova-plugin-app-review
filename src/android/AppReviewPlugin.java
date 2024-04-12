@@ -1,41 +1,57 @@
 package by.chemerisuk.cordova;
 
-import static com.google.android.gms.tasks.Tasks.await;
+import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.CallbackContext;
+import org.apache.cordova.LOG;
+import org.apache.cordova.PluginResult;
+import org.json.JSONArray;
+import org.json.JSONException;
 
 import android.app.Activity;
-import android.content.Intent;
-import android.net.Uri;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.pm.PackageManager;
+import android.content.pm.ApplicationInfo;
 
 import com.google.android.play.core.review.ReviewInfo;
 import com.google.android.play.core.review.ReviewManager;
 import com.google.android.play.core.review.ReviewManagerFactory;
+import com.google.android.play.core.tasks.Task;
 
-import org.apache.cordova.CallbackContext;
-import org.apache.cordova.CordovaArgs;
-import org.json.JSONException;
-
-import by.chemerisuk.cordova.support.CordovaMethod;
-import by.chemerisuk.cordova.support.ReflectiveCordovaPlugin;
-
-public class AppReviewPlugin extends ReflectiveCordovaPlugin {
-    @CordovaMethod(ExecutionThread.WORKER)
-    private void requestReview(CallbackContext callbackContext) throws Exception {
-        Activity activity = cordova.getActivity();
+public class AppReviewPlugin extends CordovaPlugin {
+  @Override
+  public boolean execute(String action, JSONArray args, final CallbackContext callbackContext) throws JSONException {
+    try {
+      if (action.equals("requestReview")) {
+        Activity activity = this.cordova.getActivity();
         ReviewManager manager = ReviewManagerFactory.create(activity);
-        ReviewInfo reviewInfo = await(manager.requestReviewFlow());
-        await(manager.launchReviewFlow(activity, reviewInfo));
-        callbackContext.success();
+        Task<ReviewInfo> request = manager.requestReviewFlow();
+        request.addOnCompleteListener(task -> {
+          if (task.isSuccessful()) {
+            LOG.d("AppRate", "request review success");
+            ReviewInfo reviewInfo = task.getResult();
+            Task<Void> flow = manager.launchReviewFlow(activity, reviewInfo);
+            flow.addOnCompleteListener(launchTask -> {
+              if (task.isSuccessful()) {
+                LOG.d("AppRate", "launch review success");
+                callbackContext.success();
+              } else {
+                Exception error = task.getException();
+                LOG.d("AppRate", "Failed to launch review", error);
+                callbackContext.error("Failed to launch review - " + error.getMessage());
+              }
+            });
+          } else {
+            Exception error = task.getException();
+            LOG.d("AppRate", "Failed to launch review", error);
+            callbackContext.error("Failed to launch review flow - " + error.getMessage());
+          }
+        });
+        return true;
+      }
+      return false;
+    } catch (NameNotFoundException e) {
+      callbackContext.success("N/A");
+      return true;
     }
-
-    @CordovaMethod
-    protected void openStoreScreen(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
-        String packageName = args.getString(0);
-        if (packageName == null) {
-            packageName = cordova.getActivity().getPackageName();
-        }
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + packageName));
-        intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY | Intent.FLAG_ACTIVITY_NEW_DOCUMENT | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
-        cordova.getActivity().startActivity(intent);
-        callbackContext.success();
-    }
+  }
 }
