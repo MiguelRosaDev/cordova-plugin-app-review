@@ -49,8 +49,8 @@ public class AppReviewPlugin extends CordovaPlugin {
         return true;
       }
       return false;
-    } catch (NameNotFoundException e) {
-      callbackContext.success("N/A");
+    } catch (Exception e) {
+        callbackContext.error("Failed to launch review - " + e.getMessage());
       return true;
     }
   }
